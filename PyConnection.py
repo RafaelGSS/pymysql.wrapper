@@ -1,4 +1,5 @@
 import pymysql
+import sched, time
 
 
 class MysqlConnectException(Exception):
@@ -46,12 +47,21 @@ class PySession(object):
     def query_returning_rows(self):
         pass
 
+    def reconnect(self):
+        self.__connection = self.session()
+
+    def close(self):
+        if self.connected:
+            self.__connection.close()
+            self.connected =  False
 
 class PyConnection(object):
-    def __init__(self, host, user, password, database, name, port=3306, connections=1):
+    def __init__(self, host, user, password, database, name, port=3306, connections=1, init_thread=True):
         self.__connection_pool = {}
         self.__default_pool = name
         self.add_multiple_connections(host, user, password, database, name, port, connections)
+        self.__scheduler = sched.scheduler(time.time, time.sleep)
+        self.__scheduler.enter(60, 1, self.thread_reconnect)
 
     def execute(self, query, name_pool=None, fetch_all=True):
         if name_pool is None:
@@ -61,7 +71,7 @@ class PyConnection(object):
         try:
             for conn in self.__connection_pool[name_pool]:
                 if conn.connected:
-                    res = conn.query(query)
+                    res = conn.query(query, fetch_all)
                     if res is None and conn.connected is False:
                         continue
                     response = res
@@ -75,7 +85,13 @@ class PyConnection(object):
         pass
 
     def thread_reconnect(self):
-        pass
+
+        for key in self.__connection_pool.keys():
+            for conn in self.__connection_pool[key]:
+                if conn.connected is False:
+                    conn.reconnect()
+
+        self.__scheduler.enter(60, 1, self.thread_reconnect)
 
     def set_default_name_pool(self, name):
         self.__default_pool = name
