@@ -1,5 +1,6 @@
 import pymysql
 import sched, time
+import collections
 
 
 class MysqlConnectException(Exception):
@@ -53,15 +54,20 @@ class PySession(object):
     def close(self):
         if self.connected:
             self.__connection.close()
-            self.connected =  False
+            self.connected = False
+
+    def get_connection(self):
+        return self.__connection
+
 
 class PyConnection(object):
     def __init__(self, host, user, password, database, name, port=3306, connections=1, init_thread=True):
-        self.__connection_pool = {}
+        self.__connection_pool = collections.defaultdict(list)
         self.__default_pool = name
         self.add_multiple_connections(host, user, password, database, name, port, connections)
-        self.__scheduler = sched.scheduler(time.time, time.sleep)
-        self.__scheduler.enter(60, 1, self.thread_reconnect)
+        if init_thread:
+            self.__scheduler = sched.scheduler(time.time, time.sleep)
+            self.__scheduler.enter(60, 1, self.thread_reconnect)
 
     def execute(self, query, name_pool=None, fetch_all=True):
         if name_pool is None:
@@ -81,8 +87,10 @@ class PyConnection(object):
             print(str(e))
             return None
 
-    def execute_get_rows(self, query, name_pool=None):
-        pass
+    def get_conn(self, name_pool=None):
+        if name_pool is None:
+            name_pool = self.__default_pool
+        return self.__connection_pool[name_pool][0].get_connection()
 
     def thread_reconnect(self):
 
@@ -102,6 +110,3 @@ class PyConnection(object):
     def add_multiple_connections(self, host, user, password, database, name, port, connections):
         for i in range(0, connections):
             self.add_new_connection(host, user, password, database, name, port)
-
-
-
