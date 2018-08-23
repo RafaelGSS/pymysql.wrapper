@@ -66,8 +66,13 @@ class PyConnection(object):
         self.__default_pool = name
         self.add_multiple_connections(host, user, password, database, name, port, connections)
         if init_thread:
+            threading.Thread(target=self.run_scheduler)
             self.__scheduler = sched.scheduler(time.time, time.sleep)
             self.__scheduler.enter(60, 1, self.thread_reconnect)
+
+    def run_scheduler(self):
+        while True:
+            self.__scheduler.run())
 
     def execute(self, query, name_pool=None, fetch_all=True):
         if name_pool is None:
