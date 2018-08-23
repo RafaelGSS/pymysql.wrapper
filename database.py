@@ -1,6 +1,7 @@
 import pymysql
 import sched, time
 import collections
+import threading
 
 
 class MysqlConnectException(Exception):
@@ -72,7 +73,7 @@ class PyConnection(object):
 
     def run_scheduler(self):
         while True:
-            self.__scheduler.run())
+            self.__scheduler.run()
 
     def execute(self, query, name_pool=None, fetch_all=True):
         if name_pool is None:
