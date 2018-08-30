@@ -13,7 +13,7 @@ class MysqlQueryException(Exception):
 
 
 class PySession(object):
-    def __init__(self, host, user, password, database, port):
+    def __init__(self, host, user, password, database, port, autocommit=True):
         self.connected = False
         self.__host = host
         self.__user = user
@@ -21,12 +21,13 @@ class PySession(object):
         self.__database = database
         self.__port = port
         self.__connection = self.session()
+        self.__auto_commit = autocommit
 
     def session(self):
         try:
             db = pymysql.connect(host=self.__host, user=self.__user, password=self.__password, db=self.__database,
                                  port=self.__port, cursorclass=pymysql.cursors.DictCursor, connect_timeout=30)
-            db.autocommit(True)
+            db.autocommit(self.__auto_commit)
             self.connected = True
             return db
         except MysqlConnectException as e:
@@ -46,9 +47,6 @@ class PySession(object):
             self.connected = False
             return None
 
-    def query_returning_rows(self):
-        pass
-
     def reconnect(self):
         self.__connection = self.session()
 
@@ -62,10 +60,10 @@ class PySession(object):
 
 
 class PyConnection(object):
-    def __init__(self, host, user, password, database, name, port=3306, connections=1, init_thread=True):
+    def __init__(self, host, user, password, database, name, port=3306, connections=1, init_thread=True, autocommit=True):
         self.__connection_pool = collections.defaultdict(list)
         self.__default_pool = name
-        self.add_multiple_connections(host, user, password, database, name, port, connections)
+        self.add_multiple_connections(host, user, password, database, name, port, connections, autocommit)
         if init_thread:
             threading.Thread(target=self.run_scheduler)
             self.__scheduler = sched.scheduler(time.time, time.sleep)
@@ -110,9 +108,9 @@ class PyConnection(object):
     def set_default_name_pool(self, name):
         self.__default_pool = name
 
-    def add_new_connection(self, host, user, password, database, name, port):
-        self.__connection_pool[name].append(PySession(host, user, password, database, port))
+    def add_new_connection(self, host, user, password, database, name, port, autocommit):
+        self.__connection_pool[name].append(PySession(host, user, password, database, port, autocommit=autocommit))
 
-    def add_multiple_connections(self, host, user, password, database, name, port, connections):
+    def add_multiple_connections(self, host, user, password, database, name, port, connections, autocommit):
         for i in range(0, connections):
-            self.add_new_connection(host, user, password, database, name, port)
+            self.add_new_connection(host, user, password, database, name, port, autocommit)
