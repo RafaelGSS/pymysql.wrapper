@@ -50,6 +50,12 @@ class PySession(object):
     def reconnect(self):
         self.__connection = self.session()
 
+    def commit(self):
+        self.__connection.commit()
+    
+    def rollback(self):
+        self.__connection.rollback()
+        
     def close(self):
         if self.connected:
             self.__connection.close()
