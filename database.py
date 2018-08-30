@@ -64,6 +64,16 @@ class PySession(object):
     def get_connection(self):
         return self.__connection
 
+    def execute(self, query):
+        if self.connected is False:
+            raise MysqlConnectException
+
+        with self.__connection.cursor() as cursor:
+            rows = cursor.execute(query)
+            
+        return rows
+
+
 
 class PyConnection(object):
     def __init__(self, host, user, password, database, name, port=3306, connections=1, init_thread=True, autocommit=True):
