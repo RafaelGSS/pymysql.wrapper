@@ -20,8 +20,9 @@ class PySession(object):
         self.__password = password
         self.__database = database
         self.__port = port
-        self.__connection = self.session()
         self.__auto_commit = autocommit
+        self.__connection = self.session()
+
 
     def session(self):
         try:
