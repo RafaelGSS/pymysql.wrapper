@@ -14,7 +14,7 @@ from setuptools import find_packages, setup, Command
 # Package meta-data.
 NAME = 'pymysql_wrapper'
 DESCRIPTION = 'A Wrapper for pymysql'
-URL = 'https://github.com/RafaelGSS/pymysql.wrapper'
+URL = 'https://github.com/RafaelGSS/pymysql_wrapper'
 EMAIL = 'rafael.nunu@hotmail.com'
 AUTHOR = 'Rafael Gonzaga'
 REQUIRES_PYTHON = '>=3.4.0'
