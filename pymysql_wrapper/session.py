@@ -16,7 +16,7 @@ class Session(object):
     def session(self):
         try:
             db = pymysql.connect(host=self.__host, user=self.__user, password=self.__password, db=self.__database,
-                                 port=self.__port, cursorclass=pymysql.cursors.DictCursor, connect_timeout=30)
+                                 port=self.__port, cursorclass=pymysql.cursors.DictCursor, connect_timeout=500)
             db.autocommit(self.__auto_commit)
             self.connected = True
             return db
@@ -29,11 +29,12 @@ class Session(object):
         if self.connected is False:
             return None
         try:
+            self.__connection.ping(True)
             with self.__connection.cursor() as cursor:
                 rows = cursor.execute(query)
                 return cursor.fetchall() if fetch_all else cursor.fetchone()
         except MysqlQueryException as e:
-            print(str(e))
+            print(str(e) + ' [{}]'.format(self.__database))
             try:
                 self.__connection.ping(reconnect=False)
             except MysqlConnectException as er:
